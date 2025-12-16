@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Frizētavas AI asistents</title>
+  <style>
+    body { font-family: system-ui, Arial; max-width: 900px; margin: 24px auto; padding: 0 12px; }
+    textarea { width: 100%; min-height: 110px; padding: 10px; }
+    button { padding: 10px 14px; cursor: pointer; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 12px; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+  </style>
+</head>
+<body>
+  <h2>Frizētavas AI asistents (online atbildēm)</h2>
+
+  <div class="card">
+    <p>Ielīmē klienta ziņu (piem., no Instagram/WhatsApp/e-pasta):</p>
+    <textarea id="msg" placeholder="Sveiki! Cik maksā balayage un vai ir brīvs laiks sestdien?"></textarea>
+    <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
+      <button id="btn">Ģenerēt atbildi</button>
+      <span id="status"></span>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:12px;">
+    <div class="card">
+      <h3>Atbilde klientam</h3>
+      <pre id="reply"></pre>
+    </div>
+    <div class="card">
+      <h3>Analīze (iekšēji)</h3>
+      <pre id="meta"></pre>
+    </div>
+  </div>
+
+<script>
+const btn = document.getElementById("btn");
+const statusEl = document.getElementById("status");
+const replyEl = document.getElementById("reply");
+const metaEl = document.getElementById("meta");
+
+btn.onclick = async () => {
+  const message = document.getElementById("msg").value.trim();
+  if (!message) return;
+
+  statusEl.textContent = "Domā...";
+  replyEl.textContent = "";
+  metaEl.textContent = "";
+
+  const res = await fetch("/api/reply", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({message})
+  });
+
+  const data = await res.json();
+  statusEl.textContent = res.ok ? "Gatavs ✅" : "Kļūda ❌";
+
+  if (!res.ok) {
+    replyEl.textContent = data.error || "Nezināma kļūda";
+    return;
+  }
+
+  replyEl.textContent = data.reply || "";
+  metaEl.textContent = JSON.stringify({
+    intent: data.intent,
+    missing_info: data.missing_info,
+    suggested_next_question: data.suggested_next_question
+  }, null, 2);
+};
+</script>
+</body>
+</html>
